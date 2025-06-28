@@ -19,6 +19,7 @@ import {Checkbox} from '@/shared/components/ui/checkbox';
 import {applicationsService} from '@/shared/services/applications.service';
 import {toast} from 'sonner';
 import {useRouter} from 'next/navigation';
+import {cn} from '@/shared/utils/cn';
 
 export function ApplicationForm({study}: { study: Study }) {
 	const form = useForm<ApplicationSchema>({
@@ -34,16 +35,19 @@ export function ApplicationForm({study}: { study: Study }) {
 	})
 	const router = useRouter();
 
-	const onSubmit = (values: ApplicationSchema) => {
-		applicationsService.createApplication(values).then(() => {
+	const onSubmit = async (values: ApplicationSchema) => {
+		try {
+			await applicationsService.createApplication(values)
 			toast.success("Application has been created")
 			router.push('/')
-		}).catch(error => {
+		} catch (error) {
 			toast.error("Failed to create the application", {
-				description: error.message
+				description: (error as {message: string})?.message ?? 'An unexpected error occurred'
 			})
-		});
+		}
 	}
+
+	const isSubmittingAvailable = !form.formState.isSubmitting && form.formState.isValid;
 
 	return (
 		<Form {...form}>
@@ -118,10 +122,10 @@ export function ApplicationForm({study}: { study: Study }) {
 				<ApplicationPreview studyNct={study.nctId}/>
 				<Button
 					type="submit"
-					className="w-full"
-					disabled={!form.formState.isValid || form.formState.isSubmitting}
+					className='w-full'
+					disabled={!isSubmittingAvailable}
 				>
-					{form.formState.isLoading ? 'Submitting...' : 'Submit Application'}
+					{form.formState.isSubmitting ? 'Submitting...' : 'Submit Application'}
 				</Button>
 			</form>
 		</Form>
